@@ -3,17 +3,8 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import Link from 'next/link';
 import { Facehash } from 'facehash';
-import {
-  Play,
-  Video,
-  Zap,
-  Sparkles,
-  Shield,
-  Users,
-  MoreVertical,
-} from 'lucide-react';
+import { Play, Video, Zap, Sparkles, Shield, Users } from 'lucide-react';
 
-// Hook: triggers once when element enters viewport
 function useReveal(threshold = 0.15): [RefObject<HTMLDivElement | null>, boolean] {
   const ref = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
@@ -21,7 +12,6 @@ function useReveal(threshold = 0.15): [RefObject<HTMLDivElement | null>, boolean
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -31,7 +21,6 @@ function useReveal(threshold = 0.15): [RefObject<HTMLDivElement | null>, boolean
       },
       { threshold },
     );
-
     observer.observe(el);
     return () => observer.disconnect();
   }, [threshold]);
@@ -39,20 +28,52 @@ function useReveal(threshold = 0.15): [RefObject<HTMLDivElement | null>, boolean
   return [ref, visible];
 }
 
-// Base transition classes
+function useScrollProgress(ref: RefObject<HTMLDivElement | null>): number {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const handleScroll = () => {
+      const rect = el.getBoundingClientRect();
+      const total = rect.height - window.innerHeight;
+      if (total <= 0) return;
+      setProgress(Math.max(0, Math.min(1, -rect.top / total)));
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [ref]);
+
+  return progress;
+}
+
 const hidden = 'opacity-0 translate-y-6 scale-[0.97]';
 const shown = 'opacity-100 translate-y-0 scale-100';
 const transition = 'transition-all duration-700 ease-out';
 
 export default function LandingPage() {
-  // Hero pop-in on load
   const [heroReady, setHeroReady] = useState(false);
   useEffect(() => {
     const id = requestAnimationFrame(() => setHeroReady(true));
     return () => cancelAnimationFrame(id);
   }, []);
 
-  // Scroll reveals for each section
+  const videoSectionRef = useRef<HTMLDivElement | null>(null);
+  const scrollProgress = useScrollProgress(videoSectionRef);
+
+  // Asymmetric padding: wide horizontal gap makes card look contained at rest
+  const xPadding = 140 * (1 - scrollProgress);  // 140px → 0
+  const yPadding = 72 * (1 - scrollProgress);   // 72px → 0
+  const borderRadius = 14 * (1 - scrollProgress);
+
+  // Scale values for card info section
+  const avatarSize = 36 + scrollProgress * 16;         // 36px → 52px
+  const titleSize = 0.9 + scrollProgress * 0.975;      // 0.9rem → 1.875rem (3xl)
+  const metaSize = 0.7 + scrollProgress * 0.175;       // 0.7rem → 0.875rem (sm)
+  const infoGap = 12 + scrollProgress * 6;             // 12px → 18px
+  const infoPadding = 20 + scrollProgress * 24;        // 20px → 44px
+
   const [taglineRef, taglineVisible] = useReveal(0.2);
   const [whyHeaderRef, whyHeaderVisible] = useReveal(0.2);
   const [card0Ref, card0Visible] = useReveal(0.1);
@@ -63,13 +84,12 @@ export default function LandingPage() {
 
   return (
     <div className="pt-14">
-      {/* Hero — Stealery-inspired centered layout */}
-      <section className="relative flex min-h-[calc(100vh-3.5rem)] flex-col items-center justify-center overflow-hidden px-4 py-20 md:px-6">
-        {/* Background glow */}
-        <div className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-accent/5 blur-[150px]" />
+
+      {/* Hero — py-24 (natural height, shorter than 100vh so video peeks below) */}
+      <section className="relative flex flex-col items-center justify-center overflow-hidden px-4 py-24 md:px-6">
+        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[800px] rounded-full bg-accent/5 blur-[150px]" />
 
         <div className="relative z-10 w-full max-w-5xl">
-          {/* Badge */}
           <div className={`mb-8 text-center ${transition} ${heroReady ? shown : hidden}`}>
             <span className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-5 py-2 font-mono text-xs font-semibold uppercase tracking-[0.15em] text-accent">
               <Sparkles size={14} />
@@ -77,21 +97,18 @@ export default function LandingPage() {
             </span>
           </div>
 
-          {/* Headline */}
           <h1 className={`mb-6 text-center font-display text-5xl font-extrabold leading-[1.1] tracking-tight text-text md:text-7xl ${transition} delay-100 ${heroReady ? shown : hidden}`}>
             Stand out and
             <br />
             <span className="text-accent">get hired!</span>
           </h1>
 
-          {/* Subtitle */}
           <p className={`mx-auto mb-10 max-w-xl text-center text-lg text-text-secondary md:text-xl ${transition} delay-200 ${heroReady ? shown : hidden}`}>
             Skip the resume black hole. Record a short vlog, show who you
             really are, and let recruiters come to you.
           </p>
 
-          {/* CTA Buttons */}
-          <div className={`mb-16 flex flex-col items-center justify-center gap-4 sm:flex-row ${transition} delay-300 ${heroReady ? shown : hidden}`}>
+          <div className={`flex flex-col items-center justify-center gap-4 sm:flex-row ${transition} delay-300 ${heroReady ? shown : hidden}`}>
             <Link
               href="/signup?role=candidate"
               className="rounded-lg bg-accent px-8 py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:scale-[1.02] hover:brightness-110 hover:shadow-[0_0_30px_rgba(209,17,74,0.3)]"
@@ -105,42 +122,88 @@ export default function LandingPage() {
               Browse Talent
             </Link>
           </div>
+        </div>
+      </section>
 
-          {/* Large Product Thumbnail */}
-          <div className={`${transition} delay-[400ms] ${heroReady ? shown : hidden}`}>
-            <div className="rounded-2xl border border-border bg-bg-elevated p-3 shadow-xl shadow-black/5 md:p-4">
-              {/* Video */}
-              <div className="relative mb-4 flex aspect-video items-center justify-center overflow-hidden rounded-xl bg-black">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-accent/20">
-                  <Play size={36} className="ml-1 text-white/80" />
-                </div>
-                <span className="absolute bottom-3 right-3 rounded-md bg-black/80 px-2 py-0.5 font-mono text-xs font-medium text-white">
-                  3:24
-                </span>
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-                  <div className="h-full w-1/3 bg-accent" />
-                </div>
-              </div>
+      {/* ── Video sticky scroll ─────────────────────────────────────────────────
+          h-[200vh] = 100vh of scroll distance.
+          Sticky wrapper uses `padding` as the "margin" — 24px → 0 via scroll.
+          Card fills the padded area; when padding hits 0 it's full-screen.
+      ── */}
+      <section ref={videoSectionRef} className="relative h-[200vh]">
+        <div
+          className="sticky top-14 h-[calc(100vh-3.5rem)] overflow-hidden bg-bg"
+          style={{ padding: `${yPadding}px ${xPadding}px` }}
+        >
+          {/* The card — background distinct from page (#0a0a0a) so margin is visible */}
+          <div
+            className="relative h-full w-full overflow-hidden"
+            style={{
+              borderRadius: `${borderRadius}px`,
+              background: 'linear-gradient(145deg, #242427 0%, #1b1b1e 45%, #131315 100%)',
+            }}
+          >
+            {/* Subtle border — fades as card goes full bleed */}
+            <div
+              className="pointer-events-none absolute inset-0 z-10 border border-white/[0.07]"
+              style={{
+                borderRadius: `${borderRadius}px`,
+                opacity: Math.max(0, 1 - scrollProgress * 2),
+              }}
+            />
 
-              {/* Info Row */}
-              <div className="flex gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-hover">
-                  <Facehash name="candidly-hero" size={44} interactive={false} showInitial={false} />
+            {/* Play button — fades out as card expands */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <button
+                className="flex h-16 w-16 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-accent/30"
+                style={{ opacity: Math.max(0, 1 - scrollProgress * 2) }}
+              >
+                <Play size={26} className="ml-1 text-white/90" />
+              </button>
+            </div>
+
+            {/* Duration badge */}
+            <span
+              className="absolute top-4 right-4 z-10 rounded-md bg-black/60 px-2.5 py-0.5 font-mono text-xs font-medium text-white"
+              style={{ opacity: Math.max(0, 1 - scrollProgress * 2.5) }}
+            >
+              3:24
+            </span>
+
+            {/* Progress bar */}
+            <div
+              className="absolute bottom-[68px] left-0 right-0 h-px bg-white/10"
+              style={{ opacity: Math.max(0, 1 - scrollProgress * 2.5) }}
+            >
+              <div className="h-full w-1/3 bg-accent" />
+            </div>
+
+            {/* Bottom info — all elements scale with scroll */}
+            <div
+              className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pt-20"
+              style={{ paddingLeft: `${infoPadding}px`, paddingRight: `${infoPadding}px`, paddingBottom: `${infoPadding * 0.6}px` }}
+            >
+              <div className="flex items-end" style={{ gap: `${infoGap}px` }}>
+                <div
+                  className="shrink-0 flex items-center justify-center overflow-hidden rounded-full bg-white/10"
+                  style={{ width: `${avatarSize}px`, height: `${avatarSize}px` }}
+                >
+                  <Facehash name="candidly-hero" size={52} interactive={false} showInitial={false} />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="mb-0.5 text-lg font-semibold leading-snug text-text md:text-xl">
+                <div className="flex-1 min-w-0">
+                  <h2
+                    className="font-display font-bold text-white leading-tight"
+                    style={{ fontSize: `${titleSize}rem` }}
+                  >
                     Why I&apos;m the sales rep your team needs
                   </h2>
-                  <p className="text-sm text-text-secondary">Sarah Chen</p>
-                  <p className="text-sm text-text-muted">
-                    253K views &middot; 2 hours ago
+                  <p className="mt-0.5 text-white/50" style={{ fontSize: `${metaSize}rem` }}>
+                    Sarah Chen · 253K views · 2 hours ago
                   </p>
                 </div>
-                <button className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
-                  <MoreVertical size={18} />
-                </button>
               </div>
             </div>
+
           </div>
         </div>
       </section>
@@ -148,7 +211,7 @@ export default function LandingPage() {
       {/* Tagline */}
       <section className="flex min-h-screen items-center justify-center border-t border-border bg-bg-secondary px-6">
         <div ref={taglineRef} className={`${transition} duration-1000 ${taglineVisible ? shown : hidden}`}>
-          <span className="font-display text-center text-7xl font-extrabold leading-tight tracking-tight text-text md:text-6xl lg:text-7xl block">
+          <span className="font-display block text-center text-7xl font-extrabold leading-tight tracking-tight text-text md:text-6xl lg:text-7xl">
             Where talent is watched,
             <br />
             <span className="text-accent">not filtered!</span>
@@ -235,6 +298,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
     </div>
   );
 }
