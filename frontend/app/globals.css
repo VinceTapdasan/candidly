@@ -10,18 +10,6 @@
 }
 
 @theme {
-  --color-bg: #fafafa;
-  --color-bg-secondary: #f0f0f0;
-  --color-bg-elevated: #ffffff;
-  --color-text: #111111;
-  --color-text-secondary: #555555;
-  --color-text-muted: #888888;
-  --color-border: rgba(0, 0, 0, 0.1);
-  --color-surface: rgba(0, 0, 0, 0.04);
-  --color-surface-hover: rgba(0, 0, 0, 0.08);
-}
-
-html.dark {
   --color-bg: #0a0a0a;
   --color-bg-secondary: #111111;
   --color-bg-elevated: #1a1a1a;
@@ -33,6 +21,18 @@ html.dark {
   --color-surface-hover: rgba(255, 255, 255, 0.1);
 }
 
+html.light {
+  --color-bg: #fafafa;
+  --color-bg-secondary: #f0f0f0;
+  --color-bg-elevated: #ffffff;
+  --color-text: #111111;
+  --color-text-secondary: #555555;
+  --color-text-muted: #888888;
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-surface: rgba(0, 0, 0, 0.04);
+  --color-surface-hover: rgba(0, 0, 0, 0.08);
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -40,6 +40,7 @@ html {
 body {
   background-color: var(--color-bg);
   color: var(--color-text);
+  overflow-x: hidden;
 }
 
 button, a, [role="button"], select, [type="button"], [type="submit"], [type="reset"] {

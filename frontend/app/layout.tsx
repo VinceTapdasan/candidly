@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Liter, JetBrains_Mono, Zalando_Sans_Expanded } from 'next/font/google';
 import { Navbar } from '@/components/shared/navbar';
 import { Footer } from '@/components/shared/footer';
+import { Sidebar, ContentShell } from '@/components/shared/sidebar';
 import './globals.css';
 
 const liter = Liter({
@@ -38,7 +39,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}`,
+            __html: `try{if(localStorage.getItem('theme')==='light')document.documentElement.classList.add('light')}catch(e){}`,
           }}
         />
       </head>
@@ -46,7 +47,8 @@ export default function RootLayout({
         className={`${liter.variable} ${jetbrainsMono.variable} ${displayFont.variable} font-sans antialiased`}
       >
         <Navbar />
-        <main>{children}</main>
+        <Sidebar />
+        <ContentShell>{children}</ContentShell>
         <Footer />
       </body>
     </html>
